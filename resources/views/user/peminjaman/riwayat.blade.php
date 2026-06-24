@@ -17,6 +17,16 @@
     </div>
 @endif
 
+@if ($errors->any() && !$errors->has('filter'))
+    <div class="mb-4 p-4 bg-red-600 text-white rounded shadow">
+        <ul class="list-disc pl-5">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
 <div class="bg-white p-4 rounded-xl shadow border mb-6">
 
     <form action="{{ route('user.peminjaman.riwayat') }}"
@@ -32,6 +42,7 @@
             <input type="date"
                 name="tanggal_awal"
                 value="{{ $tanggalAwal ?? '' }}"
+                max="{{ date('Y-m-d') }}"
                 class="border rounded-lg px-4 py-2 w-full">
 
         </div>
@@ -45,6 +56,7 @@
             <input type="date"
                 name="tanggal_akhir"
                 value="{{ $tanggalAkhir ?? '' }}"
+                max="{{ date('Y-m-d') }}"
                 class="border rounded-lg px-4 py-2 w-full">
 
         </div>

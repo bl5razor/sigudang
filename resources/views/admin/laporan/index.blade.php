@@ -131,6 +131,16 @@
         </div>
     @endif
 
+    @if ($errors->any() && !$errors->has('filter'))
+        <div class="mb-4 p-4 bg-red-600 text-white rounded shadow no-print">
+            <ul class="list-disc pl-5">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <div class="bg-white p-5 rounded-xl shadow mb-6 no-print">
 
         <form action="{{ route('super-admin.laporan') }}" method="GET"
@@ -142,6 +152,7 @@
                 </label>
 
                 <input type="date" name="tanggal_awal" value="{{ $tanggalAwal ?? '' }}"
+                    max="{{ date('Y-m-d') }}"
                     class="border rounded-lg px-4 py-2 w-full">
             </div>
 
@@ -151,6 +162,7 @@
                 </label>
 
                 <input type="date" name="tanggal_akhir" value="{{ $tanggalAkhir ?? '' }}"
+                    max="{{ date('Y-m-d') }}"
                     class="border rounded-lg px-4 py-2 w-full">
             </div>
 

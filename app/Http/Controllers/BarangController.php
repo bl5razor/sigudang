@@ -29,11 +29,15 @@ class BarangController extends Controller
     {
         $search = $request->search;
 
-        $barangs = Barang::when($search, function ($query, $search) {
-                $query->where('nama_barang', 'like', '%' . $search . '%')
-                    ->orWhere('kategori', 'like', '%' . $search . '%')
-                    ->orWhere('kondisi', 'like', '%' . $search . '%')
-                    ->orWhere('status', 'like', '%' . $search . '%');
+        // Modifikasi: Menambahkan filter 'kondisi' = 'baik' 
+        // dan mengelompokkan kueri pencarian agar tidak bentrok dengan filter utama
+        $barangs = Barang::where('kondisi', 'baik')
+            ->when($search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('nama_barang', 'like', '%' . $search . '%')
+                        ->orWhere('kategori', 'like', '%' . $search . '%')
+                        ->orWhere('status', 'like', '%' . $search . '%');
+                });
             })
             ->latest()
             ->paginate(5)

@@ -21,6 +21,16 @@
         </div>
     @endif
 
+    @if ($errors->any() && !$errors->has('filter'))
+        <div class="mb-4 p-4 bg-red-600 text-white rounded shadow">
+            <ul class="list-disc pl-5">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <div class="bg-white p-4 rounded-xl shadow border mb-6">
 
         <form action="{{ route('admin.peminjaman') }}" method="GET" class="flex flex-col lg:flex-row gap-3 lg:items-end">
@@ -32,6 +42,7 @@
                 </label>
 
                 <input type="date" name="tanggal_awal" value="{{ $tanggalAwal ?? '' }}"
+                    max="{{ date('Y-m-d') }}"
                     class="border rounded-lg px-4 py-2 w-full">
 
             </div>
@@ -43,6 +54,7 @@
                 </label>
 
                 <input type="date" name="tanggal_akhir" value="{{ $tanggalAkhir ?? '' }}"
+                    max="{{ date('Y-m-d') }}"
                     class="border rounded-lg px-4 py-2 w-full">
 
             </div>
@@ -110,9 +122,7 @@
                                 {{ $peminjaman->alamat_peminjam }}
                             </td>
 
-                            <td class="p-
-
-                        <td class="p-4 text-center">
+                            <td class="p-4 text-center">
                                 {{ $peminjaman->barang->nama_barang ?? '-' }}
                             </td>
 
@@ -224,7 +234,7 @@
 
                         <tr>
 
-                            <td colspan="10" class="p-6 text-center text-gray-500">
+                            <td colspan="13" class="p-6 text-center text-gray-500">
                                 Belum ada data peminjaman
                             </td>
 

@@ -20,25 +20,26 @@ class PeminjamanController extends Controller
         $request->validate([
             'barang_id' => 'required',
             'nama_peminjam' => 'required',
-            'nik' => 'required|digits_between:15,20',
+            'nik' => 'required|digits:16', 
             'alamat_peminjam' => 'required',
             'jumlah_pinjam' => 'required|integer|min:1',
-            'tanggal_pinjam' => 'required|date',
+            'tanggal_pinjam' => 'required|date|after_or_equal:today', 
             'durasi_pinjam' => 'required|integer|min:1',
-            'catatan' => 'required', // <-- Ini sudah diubah menjadi required
+            'catatan' => 'required', 
         ], [
             'nama_peminjam.required' => 'Nama peminjam wajib diisi.',
             'nik.required' => 'NIK wajib diisi.',
-            'nik.digits_between' => 'NIK harus berupa angka 15-20 digit.',
+            'nik.digits' => 'NIK harus berupa angka tepat 16 digit.', 
             'alamat_peminjam.required' => 'Alamat wajib diisi.',
             'jumlah_pinjam.required' => 'Jumlah pinjam wajib diisi.',
             'jumlah_pinjam.integer' => 'Jumlah pinjam harus angka.',
             'jumlah_pinjam.min' => 'Jumlah pinjam minimal 1.',
             'tanggal_pinjam.required' => 'Tanggal pinjam wajib diisi.',
+            'tanggal_pinjam.after_or_equal' => 'Tanggal pinjam tidak boleh sebelum hari ini.', 
             'durasi_pinjam.required' => 'Durasi pinjam wajib diisi.',
             'durasi_pinjam.integer' => 'Durasi pinjam harus angka.',
             'durasi_pinjam.min' => 'Durasi pinjam minimal 1 hari.',
-            'catatan.required' => 'Catatan wajib diisi.', // <-- Pesan error kustom ditambahkan di sini
+            'catatan.required' => 'Catatan wajib diisi.', 
         ]);
 
         $barang = Barang::findOrFail($request->barang_id);
@@ -74,6 +75,15 @@ class PeminjamanController extends Controller
 
     public function riwayat(Request $request)
     {
+        $request->validate([
+            'tanggal_awal' => 'nullable|date|before_or_equal:today',
+            'tanggal_akhir' => 'nullable|date|before_or_equal:today|after_or_equal:tanggal_awal',
+        ], [
+            'tanggal_awal.before_or_equal' => 'Tanggal awal tidak boleh melebihi hari ini.',
+            'tanggal_akhir.before_or_equal' => 'Tanggal akhir tidak boleh melebihi hari ini.',
+            'tanggal_akhir.after_or_equal' => 'Tanggal awal tidak boleh lebih maju daripada tanggal akhir.',
+        ]);
+
         $tanggalAwal = $request->tanggal_awal;
         $tanggalAkhir = $request->tanggal_akhir;
 
@@ -101,6 +111,15 @@ class PeminjamanController extends Controller
 
     public function riwayatDendaUser(Request $request)
     {
+        $request->validate([
+            'tanggal_awal' => 'nullable|date|before_or_equal:today',
+            'tanggal_akhir' => 'nullable|date|before_or_equal:today|after_or_equal:tanggal_awal',
+        ], [
+            'tanggal_awal.before_or_equal' => 'Tanggal awal tidak boleh melebihi hari ini.',
+            'tanggal_akhir.before_or_equal' => 'Tanggal akhir tidak boleh melebihi hari ini.',
+            'tanggal_akhir.after_or_equal' => 'Tanggal awal tidak boleh lebih maju daripada tanggal akhir.',
+        ]);
+
         $tanggalAwal = $request->tanggal_awal;
         $tanggalAkhir = $request->tanggal_akhir;
 
@@ -129,6 +148,15 @@ class PeminjamanController extends Controller
 
     public function adminIndex(Request $request)
     {
+        $request->validate([
+            'tanggal_awal' => 'nullable|date|before_or_equal:today',
+            'tanggal_akhir' => 'nullable|date|before_or_equal:today|after_or_equal:tanggal_awal',
+        ], [
+            'tanggal_awal.before_or_equal' => 'Tanggal awal tidak boleh melebihi hari ini.',
+            'tanggal_akhir.before_or_equal' => 'Tanggal akhir tidak boleh melebihi hari ini.',
+            'tanggal_akhir.after_or_equal' => 'Tanggal awal tidak boleh lebih maju daripada tanggal akhir.',
+        ]);
+
         $tanggalAwal = $request->tanggal_awal;
         $tanggalAkhir = $request->tanggal_akhir;
 
@@ -153,19 +181,56 @@ class PeminjamanController extends Controller
         ));
     }
 
-    public function denda()
+    public function denda(Request $request)
     {
+        // LOGIC BARU: Validasi Filter Tanggal untuk Verifikasi Denda
+        $request->validate([
+            'tanggal_awal' => 'nullable|date|before_or_equal:today',
+            'tanggal_akhir' => 'nullable|date|before_or_equal:today|after_or_equal:tanggal_awal',
+        ], [
+            'tanggal_awal.before_or_equal' => 'Tanggal awal tidak boleh melebihi hari ini.',
+            'tanggal_akhir.before_or_equal' => 'Tanggal akhir tidak boleh melebihi hari ini.',
+            'tanggal_akhir.after_or_equal' => 'Tanggal awal tidak boleh lebih maju daripada tanggal akhir.',
+        ]);
+
+        $tanggalAwal = $request->tanggal_awal;
+        $tanggalAkhir = $request->tanggal_akhir;
+
+        if (($tanggalAwal && !$tanggalAkhir) || (!$tanggalAwal && $tanggalAkhir)) {
+            return back()->withErrors([
+                'filter' => 'Tanggal awal dan tanggal akhir harus diisi.'
+            ])->withInput();
+        }
+
         $peminjamans = Peminjaman::with(['user', 'barang'])
             ->where('denda', '>', 0)
             ->where('status_denda', 'belum_lunas')
+            ->when($tanggalAwal && $tanggalAkhir, function ($query) use ($tanggalAwal, $tanggalAkhir) {
+                // Berpatokan pada tanggal_dikembalikan karena denda muncul saat barang dikembalikan
+                $query->whereBetween('tanggal_dikembalikan', [$tanggalAwal, $tanggalAkhir]);
+            })
             ->latest()
-            ->get();
+            ->paginate(5)
+            ->withQueryString();
 
-        return view('admin.denda.index', compact('peminjamans'));
+        return view('admin.denda.index', compact(
+            'peminjamans',
+            'tanggalAwal',
+            'tanggalAkhir'
+        ));
     }
 
     public function riwayatDenda(Request $request)
     {
+        $request->validate([
+            'tanggal_awal' => 'nullable|date|before_or_equal:today',
+            'tanggal_akhir' => 'nullable|date|before_or_equal:today|after_or_equal:tanggal_awal',
+        ], [
+            'tanggal_awal.before_or_equal' => 'Tanggal awal tidak boleh melebihi hari ini.',
+            'tanggal_akhir.before_or_equal' => 'Tanggal akhir tidak boleh melebihi hari ini.',
+            'tanggal_akhir.after_or_equal' => 'Tanggal awal tidak boleh lebih maju daripada tanggal akhir.',
+        ]);
+
         $tanggalAwal = $request->tanggal_awal;
         $tanggalAkhir = $request->tanggal_akhir;
 
@@ -204,6 +269,15 @@ class PeminjamanController extends Controller
 
     public function laporan(Request $request)
     {
+        $request->validate([
+            'tanggal_awal' => 'nullable|date|before_or_equal:today',
+            'tanggal_akhir' => 'nullable|date|before_or_equal:today|after_or_equal:tanggal_awal',
+        ], [
+            'tanggal_awal.before_or_equal' => 'Tanggal awal tidak boleh melebihi hari ini.',
+            'tanggal_akhir.before_or_equal' => 'Tanggal akhir tidak boleh melebihi hari ini.',
+            'tanggal_akhir.after_or_equal' => 'Tanggal awal tidak boleh lebih maju daripada tanggal akhir.',
+        ]);
+
         $tanggalAwal = $request->tanggal_awal;
         $tanggalAkhir = $request->tanggal_akhir;
 
@@ -237,17 +311,14 @@ class PeminjamanController extends Controller
             $request->tanggal_akhir
         );
 
-        // Menghitung Total Peminjaman
         $totalPeminjaman = $peminjamans->count();
 
-        // Menghitung Total Denda Belum Lunas
         $totalDenda = $peminjamans
             ->where('status_denda', 'belum_lunas')
             ->sum('denda');
 
         $namaFile = 'laporan-peminjaman.xls';
 
-        // Mengirim data peminjamans, totalPeminjaman, dan totalDenda ke blade
         $html = view('admin.laporan.excel', compact('peminjamans', 'totalPeminjaman', 'totalDenda'))->render();
 
         return response($html)
@@ -262,17 +333,14 @@ class PeminjamanController extends Controller
             $request->tanggal_akhir
         );
 
-        // Menghitung Total Peminjaman untuk Word
         $totalPeminjaman = $peminjamans->count();
 
-        // Menghitung Total Denda Belum Lunas untuk Word
         $totalDenda = $peminjamans
             ->where('status_denda', 'belum_lunas')
             ->sum('denda');
 
         $namaFile = 'laporan-peminjaman.doc';
 
-        // Mengirim data ke blade Word (sudah disiapkan untuk ke depannya)
         $html = view('admin.laporan.word', compact('peminjamans', 'totalPeminjaman', 'totalDenda'))->render();
 
         return response($html)

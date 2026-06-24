@@ -55,6 +55,7 @@
         <div class="mb-4">
             <label class="block mb-2 font-semibold">Tanggal Pinjam</label>
             <input type="date" name="tanggal_pinjam" value="{{ old('tanggal_pinjam') }}"
+                min="{{ date('Y-m-d') }}" 
                 class="w-full border rounded p-2">
         </div>
 
